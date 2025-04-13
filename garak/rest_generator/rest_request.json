@@ -1,0 +1,24 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "Ollama.Local",
+      "uri": "http://host.docker.internal:11434/api/chat",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "req_template_json_object": {
+        "model": "llama3.2:latest",
+        "messages": [
+          {
+            "role": "user",
+            "content": "$INPUT"
+          }
+        ],
+        "stream": false
+      },
+      "response_json": true,
+      "response_json_field": "$.message.content"
+    }
+  }
+}

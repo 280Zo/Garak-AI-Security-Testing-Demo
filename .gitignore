@@ -1,0 +1,41 @@
+# Ignore Docker-related files
+*.log
+*.pid
+*.seed
+*.bak
+*.swp
+.dockerignore
+
+# Byte-compiled / cache / virtualenv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+*.egg
+*.env
+.venv/
+env/
+venv/
+ENV/
+.Python
+
+# IDE/editor junk
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Garak results
+results/
+
+# Ignore any temp test output or local settings
+*.tmp
+*.out
+*.local

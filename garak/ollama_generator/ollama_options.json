@@ -1,0 +1,7 @@
+{
+  "ollama": {
+    "OllamaGeneratorChat": {
+      "host": "http://host.docker.internal:11434"
+    }
+  }
+}

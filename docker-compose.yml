@@ -1,0 +1,91 @@
+services:
+  ollama:
+    container_name: ollama
+    image: ollama/ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ollama-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # huggingface_llm:
+  #   container_name: huggingface_llm
+  #   image: huggingface/transformers-pytorch  # CPU-based image
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - huggingface_model:/app/models  # To store models if needed
+  #   command: python3 -m transformers.server  # Runs the Hugging Face model server
+  #   networks:
+  #     - ollama-net
+
+  preload_model:
+    container_name: preload_model
+    image: curlimages/curl
+    depends_on:
+      - ollama
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ollama-net
+    command: >
+      sh -c '
+        until curl -s http://ollama:11434/api/tags > /dev/null; do
+          echo "Waiting for Ollama..."; sleep 3;
+        done &&
+        curl -X POST http://ollama:11434/api/pull -d "{\"name\":\"llama3.2\"}" http://ollama:11434/api/pull
+      '
+
+  openwebui:
+    container_name: openwebui
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - ollama
+      - preload_model
+    networks:
+      - ollama-net
+
+  garak:
+    container_name: garak
+    build:
+      context: .
+      dockerfile: ./garak/Dockerfile.garak
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ollama-net
+    volumes:
+      - ./garak/ollama_generator/ollama_options.json:/app/ollama_options.json
+      - ./garak/rest_generator/rest_request.json:/app/rest_request.json
+      - ./results:/app/results
+    stdin_open: true
+    tty: true
+    depends_on:
+      - ollama
+      - preload_model
+
+volumes:
+  ollama_data:
+  openwebui_data:
+  open-webui:
+  huggingface_model:
+
+networks:
+  ollama-net:
+    driver: bridge
