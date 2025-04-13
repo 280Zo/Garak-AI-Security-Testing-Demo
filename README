@@ -22,6 +22,14 @@ This repo sets up [Garak](https://github.com/NVIDIA/garak), a vulnerability scan
 **Install Docker & Docker Compose**
 - Follow the Docker docs to [Get Docker](https://docs.docker.com/get-started/get-docker/)
 
+**Adjust Permissions**
+
+The results are provided through a bind mount for easy viewing on the host computer. However, the Garak container runs with UID 1001 and will need write access to the results directory. Running the command below will allow any user in any group to read and write to the directory. Only do this for testing.
+
+```sh
+chmod 777 ./results
+```
+
 **Bring up the containers**
 
 Navigate to the same directoy as the docker-compose file and run this command

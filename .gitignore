@@ -32,8 +32,9 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Garak results
-results/
+# Ignore everything in results except .gitkeep
+results/*
+!results/.gitkeep
 
 # Ignore any temp test output or local settings
 *.tmp
