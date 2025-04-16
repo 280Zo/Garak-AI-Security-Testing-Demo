@@ -147,7 +147,7 @@ docker compose down --remove-orphans
 
 ## Testing REST Services That Don't Have Native Support
 
-Head over to the [REST README](./garak/rest_generator/README) to learn how to build custom REST requests that Garak can use to run the tests.
+Head over to the [REST README](./garak/rest_generator/README.md) to learn how to build custom REST requests that Garak can use to run the tests.
 
 ## Common Garak Commands
 
