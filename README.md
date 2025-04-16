@@ -46,16 +46,16 @@ To use a pre-built image follow the steps below
 
 ```sh
 # build the image manually.
-docker buildx build -f garak/Dockerfile.garak -t garak_testing-garak --load .
+docker build --no-cache -t garak_testing-garak .
 
 # save it to a tar
-docker save garak_testing-garak:latest > linux-garak.tar 
+docker save -o amd64-garak.tar garak-ai-security-testing-demo-garak
 
 # move it to garak/local_images/garak.tar on the host computer
 mv /src/path/linux-garak.tar garak/local_images/linux-garak.tar 
 
 # load the image into docker
-docker load --input garak/local_images/garak.tar
+docker load --input garak/local_images/amd64-garak.tar
 
 # start the containers
 docker compose up -d
@@ -80,8 +80,24 @@ The compose file has a helper container that preloads the llama3 model, but if y
 - Click download
 - Start a new chat with the selected model
 
+Alternatively, you can log into the ollama container directly, and pull a model without the use of the OpenWebUI front end.
+
+```sh
+# get to the ollama container shell
+docker exec -it ollama /bin/bash
+
+# download the model
+ollama pull llama3.2
+
+# verify it downloaded
+ollama list
+
+# run the model
+ollama run llama3.2
+```
+
 **Corporate**
-- If you're behind a corporate proxy and/or using WSL you may have to fiddle with some of the commands and config files
+- If you're behind a corporate proxy and/or using WSL you may have to fiddle with some of the commands and config files.
 
 ## What You Need to Know to Use Garak Effectively
 
@@ -104,34 +120,31 @@ docker exec -it garak /bin/bash
 
 Pick a generator, choose your probe, and fire it at the model!
 
-> ℹ️ **Note:** LLMs are inconsistent — they don’t always give the same answer twice. That’s where the `--generations` flag comes in. It tells Garak how many times to run each test. The default is 10 (which is great for thoroughness but kind of a time hog). Somewhere around 3–4 is usually enough to catch interesting stuff without waiting forever, and 1-2 is great for testing.
+> ℹ️ **Note:** LLMs are non-deterministic  — they can produce **different** outputs given the **same** input. That’s where the `--generations` flag comes in. It tells Garak how many times to run each test. The default is 10 (which is great for thoroughness but kind of a time hog). Somewhere around 3–4 is usually enough to catch interesting stuff for a demo without waiting forever.
 
-Here’s an example command to get you rolling:
+Here’s an example command to get you rolling. Happy probing 😈:
 ```sh
 garak --model_type ollama \
       --model_name llama3.2:latest \
       --probes xss \
-      --generations 2 \
+      --generations 3 \
       --generator_option_file /app/ollama_options.json \
       --report_prefix /app/results/$(date +%Y-%m-%dT%H%M%S) \
       --verbose
 ```
-Happy probing 😈
-
 
 **Viewing the Results**
 
-When all probe tests have finished, two reports will be generated:
+When all probe tests have finished, two reports will be generated. A third will be generated if there are findings. These will be moved to the results directory in the repository directory on the host computer.
 
-📜 report closed :) /app/results/2025-04-12T092409-.report.jsonl
+📜 report.html: Very high level, bare bones summary
 
-📜 report html summary being written to /app/results/2025-04-12T092409-.report.html
+📜 hitlog.jsonl: Contains only the failures
 
-These will be moved to the results directory in the repository directory on the host computer.
+📜 report.jsonl: Contains all the tests run and the result of each.
 
-The HTML report is bare bones and has very high level results.
 
-The jsonl report contains all the tests run and the result of each. You can format this file in a different program, or if you just want to grep it from the CLI you can use jq
+The JSON Line files can be formatted and read (e.g. the jq command below for grepping), or they can be consumed by other processes.
 
 ```sh
 jq -c '.' /path/to/workspace/garak_demo/results/2025-04-12T082159.hitlog.jsonl | jq
