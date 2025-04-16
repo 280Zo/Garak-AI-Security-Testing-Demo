@@ -1,35 +1,38 @@
 FROM python:3.12-slim
 
-# Create a non-root user and group
+# Create a non-root user and install dependencies + Rust
 RUN groupadd --gid 1001 garak && \
-    useradd --uid 1001 --gid garak --create-home --shell /bin/bash garak
-
-# Install system dependencies as root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    git \
-    curl \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set up virtual environment and install garak
-RUN python3 -m venv /opt/garak-venv \
-    && /opt/garak-venv/bin/pip install --upgrade pip \
-    && /opt/garak-venv/bin/pip install garak
+    useradd --uid 1001 --gid garak --create-home --shell /bin/bash garak && \
+    apt-get update && apt-get install -y --no-install-recommends \
+        bash \
+        git \
+        curl \
+        build-essential \
+        libffi-dev \
+        libssl-dev \
+        ca-certificates && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    ln -s /root/.cargo/bin/* /usr/local/bin/ && \
+    apt-get purge -y curl && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /root/.cargo/registry /root/.cargo/git
 
 # Set working directory
 WORKDIR /app
 
-# Set permissions so the non-root user can access /app and venv
-RUN chown -R garak:garak /app /opt/garak-venv
+# Install garak and clean up all temp files and caches
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir garak && \
+    apt-get purge -y build-essential && \
+    apt-get autoremove -y && \
+    rm -rf /root/.cache /home/garak/.cache /root/.cargo /root/.rustup \
+           /usr/share/doc /usr/share/man /usr/share/info /var/cache /var/log /tmp/*
 
-# Switch to the non-root user
+# Set ownership for non-root user
+RUN chown -R garak:garak /app
+
+# Switch to non-root
 USER garak
 
-# Put the virtualenv on the PATH
-ENV PATH="/opt/garak-venv/bin:$PATH"
-
+# Default shell
 CMD ["/bin/bash"]

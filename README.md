@@ -1,20 +1,23 @@
 # 🧪 Garak AI - LLM Security Testing
 
-This repo sets up [Garak](https://github.com/NVIDIA/garak), a vulnerability scanner for LLMs, with support for running tests against models hosted via [Ollama](https://ollama.com) or REST APIs (like [OpenWebUI](https://github.com/open-webui/open-webui)).
+This repo sets up a testing environment for [Garak](https://github.com/NVIDIA/garak), a vulnerability scanner for LLMs, with support for running tests against hosted models, or models that have a REST APIs.
+It uses [OpenWebUI](https://github.com/open-webui/open-webui) for a front end to [Ollama](https://ollama.com) which is a tool that allows users to run large language models (LLMs) locally on their own computers.
+
 
 ## 🚀 File & Directory Structure
 
 ```text
-├── docker-compose.yml         # Spins up the full test environment (Garak + model)
-├── garak/                     # All things Garak, including Dockerfile and config
-│   ├── Dockerfile.garak       # Dockerfile for the Garak container
-│   ├── ollama_generator/      # Config for using Garak with Ollama
-│   │   └── ollama_options.json # JSON config file pointing Garak to the Ollama host
-│   └── rest_generator/        # Config for using Garak with REST-based LLM APIs
-│       ├── rest_request.json  # REST generator config (used with llama for demo)
-│       └── README             # Instructions for creating and using the REST generator
-├── README.md                  # You're here! Overview of the project
-└── results/                   # Output directory for test reports
+├── docker-compose.yml             # Spins up the full test environment (Garak + model)
+├── garak/                         # All things Garak, including Dockerfile and config
+│   ├── Dockerfile.garak           # Dockerfile for building the Garak image
+│   ├── local_images               # Pre-built Docker images for different OS platforms
+│   ├── ollama_generator/          # Config for using Garak with Ollama
+│   │   └── ollama_options.json    # JSON config file pointing Garak to the Ollama host
+│   └── rest_generator/            # Config for using Garak with REST-based LLM APIs
+│       ├── rest_request.json      # REST generator config (used with llama for demo)
+│       └── README                 # Instructions for creating and using the REST generator
+├── README.md                      # You're here! Overview of the project
+└── results/                       # Output directory for test reports
 ```
 
 ## Prereqs to Testing
@@ -32,10 +35,30 @@ chmod 777 ./results
 
 **Bring up the containers**
 
-Navigate to the same directoy as the docker-compose file and run this command
+This can be done using a pre-built image (good for those behind a corporate proxy), or you can let docker compose build it for you.
 
+docker compose build (preferred method)
 ```sh
 docker compose up --build -d
+
+```
+To use a pre-built image follow the steps below
+
+```sh
+# build the image manually.
+docker buildx build -f garak/Dockerfile.garak -t garak_testing-garak --load .
+
+# save it to a tar
+docker save garak_testing-garak:latest > linux-garak.tar 
+
+# move it to garak/local_images/garak.tar on the host computer
+mv /src/path/linux-garak.tar garak/local_images/linux-garak.tar 
+
+# load the image into docker
+docker load --input garak/local_images/garak.tar
+
+# start the containers
+docker compose up -d
 
 ```
 
@@ -71,15 +94,6 @@ The compose file has a helper container that preloads the llama3 model, but if y
 | **[Reports](https://reference.garak.ai/en/latest/report.html)**   | Save outputs                             | Useful for audits & dashboards           |
 
 ## How to Run Garak Probes Against Your Installed LLM
-
-**Make Sure Containers Are Up**
-
-Check Docker to make sure garak, openwebui, and ollama are up.
-
-```sh
-docker ps
-
-```
 
 **Log into the garak container**
 
